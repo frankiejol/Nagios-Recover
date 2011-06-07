@@ -1,0 +1,42 @@
+Nagios-Recover version 0.0.1
+
+NAME
+       Nagios::Recover - Tries to recover a service executing a list of
+       actions
+
+SYNOPSIS
+           use Nagios::Recover qw(recover);
+
+           my $status = recover(
+                service => 'ftp',
+                 action => ["sudo /etc/init.d/ftp restart",
+                           "sudo killall -9 ftpd",
+                           "sudo /etc/init.d/ftp restart",
+                           "sudo init 6"
+                ]
+           );
+
+           print $status->{executed};
+
+
+INSTALLATION
+
+To install this module, run the following commands:
+
+	perl Makefile.PL
+	make
+	make test
+	make install
+
+
+DEPENDENCIES
+
+None.
+
+
+COPYRIGHT AND LICENCE
+
+Copyright (C) 2011, Francesc Guasch
+
+This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.
