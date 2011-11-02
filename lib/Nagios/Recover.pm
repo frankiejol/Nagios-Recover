@@ -9,7 +9,7 @@ use YAML qw(LoadFile DumpFile);
 
 use version; our $VERSION = qv('0.0.3');
 
-our @EXPORT_OK = qw(recover);
+our @EXPORT_OK = qw(recover fixed);
 
 our $DIR = "/var/run/recover";
 
@@ -33,26 +33,41 @@ sub recover {
         $status = LoadFile($file_status) or die "I can't open $file_status $! at".getcwd;
         return $status if !check_delay($data{delay}, $file_status);
 
-        $status->{level} = ($status->{level} +1 ) % (scalar @{$action});
+        $status->{level}++;
+        $status->{level}=1 if ( $status->{level} >  scalar @{$action} );
     }
 
     $status->{service} ||= $data{service};
-    $status->{level} ||= 0;
+    $status->{level} ||= 1;
 
-    my $cmd= $data{action}->[$status->{level}];
-
+    my $cmd = '<nothing>';
     my $out;
-    open my $exec ,"-|",$cmd or die $!;
-    while (<$exec>) {
-         $out.= $_;
+
+    if ($data{fixed}) {
+        $status->{level} = 0;
+    } else {
+
+        $cmd= $data{action}->[$status->{level} - 1] 
+                   or confess "Missing action for level $status->{level}"
+                        . join "\n",@{$data{action}};
+
+        open my $exec ,"-|",$cmd or die "$! $status->{level}";
+        while (<$exec>) {
+            $out.= $_;
+        }
+        close $exec;
+
     }
-    close $exec;
 
     DumpFile($file_status,$status) or die "I can't write status file '$file_status' $!";
 
-    $status->{done} = $cmd;
+    $status->{executed} = $cmd;
     $status->{out} = $out;
     return $status;
+}
+
+sub fixed {
+    return recover(@_,fixed => 1);
 }
 
 sub check_delay {
@@ -95,6 +110,8 @@ This document describes Nagios::Recover version 0.0.1
 
     print $status->{executed};
   
+    $status = fixed( service => 'ftp');
+
 =head1 DESCRIPTION
 
     It tries to recover a service in critical condition. A list of 
@@ -118,6 +135,15 @@ This document describes Nagios::Recover version 0.0.1
                     ],
             dir => "/var/run/recover", # Default operational directory
     );
+
+=head2 fixed
+
+    my $status = recover (
+            log => 'syslog', # default syslog, file if passed   [TODO]
+        service => $service, # service we are checking   [ MANDATORY ]
+            dir => "/var/run/recover", # Default operational directory
+    );
+
 
 =head2 $status
 

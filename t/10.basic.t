@@ -24,9 +24,9 @@ eval {
 };
 ok($@ =~ /Missing action/);
 
-my $action= ["echo action0 $$ > tmp/action.txt",
-              "echo action1 $$ > tmp/action.txt",
+my $action= ["echo action1 $$ > tmp/action.txt",
               "echo action2 $$ > tmp/action.txt",
+              "echo action3 $$ > tmp/action.txt",
             ];
 
 if ( ! -d 'tmp'){
@@ -47,7 +47,7 @@ my $status = recover(    dir => './tmp',
         action => $action,
 );
 
-ok($status->{level} == 0);
+ok($status->{level} == 1);
 ok($status->{service} eq 'ftpd');
 
 $status = recover(
@@ -55,7 +55,7 @@ $status = recover(
          action => $action,
         service => 'ftpd',
 );
-ok($status->{level} == 1);
+ok($status->{level} == 2);
 
 $status = recover(
             dir => './tmp', 
@@ -64,9 +64,9 @@ $status = recover(
 );
 
 
-ok($status->{level} == 2);
+ok($status->{level} == 3);
 
-for my $expected (0 .. 2) {
+for my $expected (1 .. 3) {
     $status = recover(
                 dir => './tmp', 
              action => $action,
@@ -75,18 +75,18 @@ for my $expected (0 .. 2) {
     
     ok($status->{level} == $expected);
     ok(action_echo() eq "action$expected $$");
-    ok($status->{done} eq $action->[$expected]);
+    ok($status->{executed} eq $action->[$expected-1]);
 }
 
-push @{$action},("echo action3 $$");
+push @{$action},("echo action4 $$");
 $status = recover(
                 dir => './tmp', 
              action => $action,
             service => 'ftpd',
 );
     
-ok($status->{level} == 3);
-ok($status->{out} eq "action3 $$\n") or warn $status->{out};
+ok($status->{level} == 4);
+ok($status->{out} eq "action4 $$\n") or warn $status->{out};
 
 # Now we'll test the delays
 my $delay = 3;
@@ -98,7 +98,7 @@ $status = recover(
 
 );
     
-ok($status->{level} == $delay);
+ok($status->{level} == 4);
 
 sleep 1;
 $status = recover(
@@ -108,7 +108,7 @@ $status = recover(
             service => 'ftpd',
 
 );
-ok($status->{level} == $delay);
+ok($status->{level} == 4);
 
 
 sleep $delay;
@@ -119,4 +119,4 @@ $status = recover(
             service => 'ftpd',
 
 );
-ok($status->{level} == 0) or warn $status->{level};
+ok($status->{level} == 1) or warn $status->{level};
