@@ -139,7 +139,6 @@ This document describes Nagios::Recover version 0.0.1
 =head2 fixed
 
     my $status = recover (
-            log => 'syslog', # default syslog, file if passed   [TODO]
         service => $service, # service we are checking   [ MANDATORY ]
             dir => "/var/run/recover", # Default operational directory
     );
