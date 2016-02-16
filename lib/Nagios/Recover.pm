@@ -7,7 +7,7 @@ use Cwd;
 use Exporter 'import';
 use YAML qw(LoadFile DumpFile);
 
-use version; our $VERSION = qv('0.0.3');
+use version; our $VERSION = qv('0.0.4');
 
 our @EXPORT_OK = qw(recover fixed);
 
@@ -26,10 +26,14 @@ sub recover {
     my %data= @_;
     my ($dir) = ($data{dir} or $DIR);
     my $service = $data{service} or croak "Missing service => 'name'";
-    my $action  = $data{action}  or croak "Missing action => [action list ]";
+    my $fixed = $data{fixed};
+    my $action  = $data{action};
+    croak "Missing action => [action list ]"
+                if !$fixed && !$action;
+
     my $status;
     my $file_status = "$dir/$service.status";
-    if ( -e $file_status ) {
+    if (!$fixed &&  -e $file_status ) {
         $status = LoadFile($file_status) or die "I can't open $file_status $! at".getcwd;
         return $status if !check_delay($data{delay}, $file_status);
 
