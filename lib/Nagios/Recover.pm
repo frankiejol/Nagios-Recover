@@ -101,20 +101,24 @@ This document describes Nagios::Recover version 0.0.1
 
 =head1 SYNOPSIS
 
-    use Nagios::Recover qw(recover);
+    use Nagios::Recover qw(recover fixed);
 
-    my $status = recover(
-         service => 'ftp',
-          action => ["sudo /etc/init.d/ftp restart",
-                    "sudo killall -9 ftpd",
-                    "sudo /etc/init.d/ftp restart",
-                    "sudo init 6"
-         ]
-    );
-
-    print $status->{executed};
-  
-    $status = fixed( service => 'ftp');
+    if (my_service_fails()) {
+        my $status = recover(
+            service => 'my_service_name',
+            action => ["sudo /etc/init.d/my_service restart",
+                    "sudo killall -9 my_service_daemon",
+                    "sudo /etc/init.d/my_service restart",
+                    "sudo /sbin/reboot"
+            ]
+        );
+        print "CRITICAL: $status->{executed}\n";
+        exit(2);
+    } else {
+        fixed( service => 'ftp');
+        print "OK.\n";
+        exit(0);
+    }
 
 =head1 DESCRIPTION
 
@@ -163,6 +167,8 @@ This document describes Nagios::Recover version 0.0.1
 =over
 
 =item Can't write to dir_lock file
+
+Create the recover dir and make nagios be its owner. Default is /var/run/recover
 
 =item Can't issue recover action
 
